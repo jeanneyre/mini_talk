@@ -6,57 +6,72 @@
 /*   By: crondeau <crondeau@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 16:31:48 by crondeau          #+#    #+#             */
-/*   Updated: 2021/12/13 15:12:39 by crondeau         ###   ########.fr       */
+/*   Updated: 2021/12/14 15:00:13 by crondeau         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <signal.h>
-
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-void otherfunction(int )
+void	ft_kill(int pid, int sig, char **argv)
 {
-	static char *message;
-	(void)sig;
-
-	
-	j = 0;
-	while (argv[2][j])
+	if (pid == 0 || kill(pid, sig) != 0)
 	{
-		a = argv[2][j];
-		i = 6;
-		while (i > -1)
-		{
-			if (a & 1 << i--)
-				kill(pid, SIGUSR2);
-			else
-				kill(pid, SIGUSR1);
-			usleep(500);
-		}
+		write(2, "Error PID\n", 10);
+		free(*argv);
+		exit(1);
+	}
+}
+
+void otherfunction(int pid, char *argv)
+{
+	static char *message = 0;
+	static int s_pid = 0;
+	static int i = 7;
+	static int j = 0;
+
+	if (pid != 0)
+		s_pid = pid;
+	if (argv != 0)
+		message = strdup(argv);
+	if (!message)
+		exit(0);
+	if (message[j] & 1 << i--)
+		ft_kill(s_pid, SIGUSR2, &message);
+	else
+		ft_kill(s_pid, SIGUSR1, &message);
+	if (i < 0)
+	{
+		i = 7;
 		j++;
+	}
+	if (message[j] == '\0')
+	{
+		free(message);
+		message = NULL;
 	}
 }
 
 void	signal_handler(int sig)
 {
-
+	(void)sig;
+	otherfunction(0, 0);
 }
 
 int	main(int argc, char **argv)
 {
 	int pid;
-	char a;
-	int i;
-	int j;
 	
 	if (argc != 3)
 	{
+		write (2, "Error: ./client PID string\n", 27);
 		return (0);
 	}
 	pid = atoi(argv[1]);
 	signal(SIGUSR1, &signal_handler);
-	j = 0;
+	otherfunction(pid, argv[2]);
 	while (1)
 	{
 		pause();
